@@ -10,6 +10,16 @@ on:
 
 jobs:
 
+  check-branch-pr:
+    runs-on: ubuntu-latest
+    steps:
+      -name: Block invalid PRs
+       run: |
+        case "${{ github.event.pull_request.base.ref }}" in
+          stage) [[ "${{ github.event.pull_request.head.ref }}" == "devel" ]] || exit 1 ;;
+          prod) [[ "${{ github.event.pull_request.head.ref }}" == "stage" ]] || exit 1 ;;
+        esac
+
   build:
     runs-on: ubuntu-latest
     default:
