@@ -18,8 +18,8 @@ jobs:
       - name: Block invalid pushes
         run: |
           case "${GITHUB_REF#refs/heads/}" in
-            stage) [[ "$(git log -1 --pretty=%B)" =~ "from devel" ]] || exit 1 ;;
-            prod) [[ "$(git log -1 --pretty=%B)" =~ "from stage" ]] || exit 1 ;;
+            stage) [[ "${{ github.event.pull_request.head.ref }}" == "devel" ]] || exit 1 ;;
+            prod) [[ "${{ github.event.pull_request.head.ref }}" == "stage" ]] || exit 1 ;;
           esac
 
   deploy:
@@ -71,7 +71,7 @@ jobs:
         - name: terraform apply
           working-directory: terraform
           run: terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
-          
+
         - name: Get S3 bucket name
           working-directory: terraform
           run: |
