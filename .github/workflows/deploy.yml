@@ -76,8 +76,11 @@ jobs:
           working-directory: terraform
           run: echo "BUCKET_NAME=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
 
-        - name: Debug S3 bucket name
-          run: echo "Bucket Name: $BUCKET_NAME"
+        - name: Get S3 bucket name
+          working-directory: terraform
+          run: |
+            echo "BUCKET_NAME=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
+            cat $GITHUB_ENV
 
         - name: Upload build to bucket
           working-directory: codebase/rdicidr-0.1.0
