@@ -34,16 +34,20 @@ jobs:
           with:
             node-version: '15'
 
+        - name: Clean previous build and cache
+          working-directory: codebase/rdicidr-0.1.0
+          run: |
+            rm -rf ./build
+            npm cache clean --force
+        
         - name: install dependencies
           working-directory: codebase/rdicidr-0.1.0
           run: npm install
 
-        - name: Clean previous build
-          run: rm -rf ./build
-
         - name: build app
           working-directory: codebase/rdicidr-0.1.0
           run: npm run build
+          continue-on-error: false
 
         - name: Configure AWS Creds
           uses: aws-actions/configure-aws-credentials@v1
@@ -75,8 +79,4 @@ jobs:
         - name: Upload build to bucket
           working-directory: codebase/rdicidr-0.1.0
           run: aws s3 cp ./build s3://BUCKET_NAME --recursive
-
-#
-        
-
         
