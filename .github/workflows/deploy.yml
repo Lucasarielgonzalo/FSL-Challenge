@@ -1,0 +1,84 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - devel
+      - stage
+      - prod
+
+jobs:
+
+  validate-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Block invalid pushes
+        run: |
+          case "${GITHUB_REF#refs/heads/}" in
+            stage) [[ "$(git log -1 --pretty=%P)" =~ "$(git rev-parse origin/devel)" ]] || exit 1 ;;
+            prod) [[ "$(git log -1 --pretty=%P)" =~ "$(git rev-parse origin/stage)" ]] || exit 1 ;;
+          esac
+
+  deploy:
+    needs: validate-merge
+    runs-on: ubuntu-latest
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+        
+        - name: Set up Node.js 15
+          uses: actions/setup-node@v4
+          with:
+            node-version: '15'
+
+        - name: Clean previous build and cache
+          working-directory: codebase/rdicidr-0.1.0
+          run: |
+            rm -rf ./build
+            npm cache clean --force
+        
+        - name: install dependencies
+          working-directory: codebase/rdicidr-0.1.0
+          run: npm install
+
+        - name: build app
+          working-directory: codebase/rdicidr-0.1.0
+          run: npm run build
+          continue-on-error: false
+
+        - name: Configure AWS Creds
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+            aws-region: us-east-1
+
+        - name: Set up terraform
+          uses: hashicorp/setup-terraform@v3
+
+        - name: terraform init
+          working-directory: terraform
+          run: terraform init
+
+        - name: terraform validate
+          working-directory: terraform
+          run: terraform validate
+
+        - name: terraform apply
+          working-directory: terraform
+          run: terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
+          
+        - name: Get S3 bucket name
+          working-directory: terraform
+          run: |
+            echo "BUCKET_NAME=$(terraform output -raw bucket_name)" >> $GITHUB_ENV
+            cat $GITHUB_ENV
+
+        - name: Upload build to bucket
+          working-directory: codebase/rdicidr-0.1.0
+          run: aws s3 cp ./build s3://${{ env.BUCKET_NAME }} --recursive
+        
