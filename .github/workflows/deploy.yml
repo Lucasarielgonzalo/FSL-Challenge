@@ -51,23 +51,23 @@ jobs:
           uses: hashicorp/setup-terraform@v3
 
         - name: terraform init
-          working.directory: terraform
+          working-directory: terraform
           run: terraform init
 
         - name: terraform validate
-          working.directory: terraform
+          working-directory: terraform
           run: terraform validate
 
         - name: terraform apply
-          working.directory: terraform
+          working-directory: terraform
           run: terraform apply -var-file="${{ github.ref_name}}.tfvars" -auto-approve
 
         - name: Get S3 bucket name
-          working.directory: terraform
+          working-directory: terraform
           run: echo "BUCKET_NAME=${terraform output -raw bucket_name}" >> $GITHUB_ENV
 
         - name: Upload build to bucket
-          working.directory: codebase/rdicidr-0.1.0
+          working-directory: codebase/rdicidr-0.1.0
           run: aws s3 cp ./build s3://BUCKET_NAME --recursive
 
         
