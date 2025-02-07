@@ -30,4 +30,3 @@ resource "aws_s3_bucket_public_access_block" "fsl-chalenge-bucket-access" {
   restrict_public_buckets = false
 }
 
-q
