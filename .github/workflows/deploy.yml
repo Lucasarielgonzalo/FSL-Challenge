@@ -63,7 +63,7 @@ jobs:
 
         - name: terraform apply
           working-directory: terraform
-          run: terraform apply -var-file="${{ github.ref_name}}.tfvars" -auto-approve
+          run: terraform apply -var-file="${{ github.ref_name }}.tfvars" -auto-approve
 
         - name: Get S3 bucket name
           working-directory: terraform
